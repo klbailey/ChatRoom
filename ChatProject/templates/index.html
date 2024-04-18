@@ -1,0 +1,105 @@
+<!-- ChatProject>templates>index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Room</title>
+</head>
+<body>
+    <div class="parent">
+        <div class="child">
+            <h1>Enter Room</h1>
+            
+            <form action="" method="POST">
+                {% csrf_token %}
+                <label for="username">Username</label><br>
+                <input type="text" id="username" name="username" placeholder="Username" required><br>
+                <label for="room">Room name</label><br>
+                <input type="text" id="room" name="room" placeholder="Room name" required><br>
+                
+                <label for="existing-rooms">Existing Rooms</label><br>
+
+                <select id="existing-rooms" name="existing_rooms">
+                    {% if rooms %}
+                        <option value="" disabled selected>Select a room</option> <!-- Add a default option -->
+                        {% for room_name in rooms %}
+                            <option value="{{ room_name }}">{{ room_name }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled selected>No rooms found</option> <!-- Display if no rooms exist -->
+                    {% endif %}
+                </select>         
+                <center><button type="submit">Submit</button></center><br>
+            </form> 
+            
+        </div>
+    </div>
+</body>
+<script>
+    document.getElementById('existing-rooms').addEventListener('change', function() {
+        var selectedRoom = this.value; // Get the selected room name
+        var username = document.getElementById('username').value; // Get the username
+        var url = "/"+selectedRoom+"/"+username+"/"; // Construct the URL
+        window.location.href = url; // Redirect the user to the selected room's URL
+    });
+</script>
+
+<style>
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.parent {
+    background-color: teal;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.child {
+    display: flex;
+    background-color: rgb(163, 174, 174);
+    height: 80vh;
+    width: 50%;
+    border-radius: 10px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 100px;
+}
+
+form {
+    width: 80%;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid dodgerblue;
+    width: 100%;
+    margin: 10px;
+    border-radius: 5px;
+}
+
+button {
+    background-color: teal;
+    padding: 10px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    width: 20%;
+}
+
+button:hover {
+    padding: 15px;
+    transition: 0.8s;
+}
+
+</style>
+</html>

@@ -1,0 +1,418 @@
+<!-- ChatProject>templates>message.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Messages</title>
+    <!-- load static -->
+    {% load static %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+
+    <!-- Navigation bar -->
+    <nav>
+        <ul>
+            <li style="color:white;">You are in the room {{ user }}</li>
+            <!-- Add an exit button -->
+            <li><button id="exitButton">Exit</button></li>
+        </ul>
+    </nav>
+
+    <!-- Add sidebar? -->
+
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <h3>Active Users:</h3>
+            <ul>
+                
+                {% for user in active_users %}
+                    <li>{{ user }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="parent">
+        <div class="child-2">
+            <center><br><h2>Chat</h2></center><br>
+            <div class="chat-body-parent">
+                <div class="chat-body" id="tasks">
+                    <div class="message" id="chatContainer">
+                      <!-- received messages / displayed here -->
+                        
+                        {% for i in messages %}
+                            {% if i.sender != user %}
+                                <div class="receive">
+                                    <p style="color: #000;"> {{i.message}}<strong>-{{i.sender}}</strong></p>
+                                    <!-- time in messages -->
+                                    <span class="timestamp">{{ i.timestamp }}</span>
+                                    
+                                </div>
+                            {% else %}
+                                <div class="send">
+                                    <p style="color: #000;">{{i.message}}</p>
+
+                                    <span class="timestamp">{{ i.timestamp }}</span>
+
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                            
+                                <!-- <div class="receive">
+                                    <p style="color: #000;"> {{i.message}}<strong>-{{i.sender}}</strong></p>
+                                </div>
+                            
+                                <div class="send">
+                                    <p style="color: #000;">{{i.message}}</p>
+                                </div> -->
+                            
+                    <!-- end receive messages -->
+                    </div>
+
+                    <div class="form">
+                        <form action="" id="message-form" method="POST">
+                            {% csrf_token %}
+                            <textarea id="msg" cols="30" name="message" rows="10" placeholder="Enter your message" required></textarea>
+                            <button class="submit" type="submit">Send</button>
+                        </form>    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    function scrollToBottom() {
+        var chatContainer = document.getElementById("chatContainer");
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    // Call the function when the page loads or when a new message is added
+    window.onload = scrollToBottom;
+    // if url is secure (https) will use ws 
+    const websocketProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    // create endpoint url map to routing.py
+    const wsEndpoint = `${websocketProtocol}://${window.location.host}/ws/notification/{{room_name}}/`;
+    // create socket using endpoint created
+    const socket = new WebSocket(wsEndpoint);
+
+    // Successful connection event
+    socket.onopen = (event) => {
+        console.log("WebSocket connection opened!");
+    };
+
+    // Socket disconnect event
+    socket.onclose = (event) => {
+        console.log("WebSocket connection closed!");
+    };
+
+    // Define currentTime outside of the event listener
+    let currentTime;
+
+    // Form submit listener so page doesn't refresh page on send
+    document.getElementById('message-form').addEventListener('submit', function(event){
+        event.preventDefault();
+        const message = document.getElementById('msg').value;
+        // Get the current timestamp
+        const currentTime = new Date().toISOString();
+        // send user input data in json format 
+        socket.send(
+            JSON.stringify({
+                'message': message,
+                'timestamp': currentTime,
+                'room_name': '{{room_name}}',
+                'sender': '{{user}}',
+            })
+        );
+    });
+
+    // Response from consumer on server
+    socket.addEventListener("message", (event) => {
+        const messageData = JSON.parse(event.data)['message'];
+        console.log(messageData);
+
+        var sender = messageData['sender'];
+        var message = messageData['message'];
+        var timestamp = messageData['timestamp']; 
+
+        console.log("Sender:", sender);
+        console.log("Message:", message);
+        console.log("Timestamp:", timestamp);
+
+        // Convert timestamp to Date object
+        var date = new Date(timestamp);
+
+        // Format the timestamp using toLocaleString()
+        var formattedTimestamp = date.toLocaleString('en-US', {
+        // var formattedTimestamp = new Date(timestamp).toLocaleString('en-US', {
+            month: 'long', // Display full month name
+            day: 'numeric', // Display day of the month
+            year: 'numeric', // Display full year
+            hour: 'numeric', // Display hour
+            minute: 'numeric', // Display minute
+            hour12: true // Use 12-hour clock format
+        });
+
+        // Empty message input field after message has been sent
+        if (sender == '{{user}}'){
+            document.getElementById('msg').value = '';
+        }
+        
+        // Append message to chatbox
+        var messageDiv = document.querySelector('.message');
+        if (sender != '{{user}}') { // Assuming you have a variable `currentUser` to hold the current user's name
+            messageDiv.innerHTML += '<div class="receive"><p style="color: #000;">' + message + '<strong>-' + sender + '</strong></p><span class="timestamp">' + formattedTimestamp + '</span></div>';
+        } else {
+            // Update the timestamp for the sent message when it's received from the server
+            var sentMessage = '<div class="send"><p style="color: #000;">' + message + '</p><span class="timestamp">' + formattedTimestamp + '</span></div>';
+            messageDiv.innerHTML += sentMessage;
+            // Check if the message is sent, then update the timestamp
+            if (messageData['sender'] == '{{user}}') {
+                const index = messageDiv.children.length - 1; // Index of the last child element
+                // Replace the "Sending..." placeholder with the actual timestamp
+                messageDiv.children[index].querySelector('.timestamp').innerText = formattedTimestamp;
+            }
+        }
+        scrollToBottom();
+    });
+
+    // Add event listener for the exit button
+    document.getElementById('exitButton').addEventListener('click', function(event){
+    // Close WebSocket connection
+    socket.close(); 
+
+    // Redirect to the desired page
+    window.location.href = '/'; // Redirect to the home page
+});
+
+</script>
+<style>
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.parent {
+    background-color: teal;
+}
+
+nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: rgb(5, 82, 82);
+    padding: 10px;
+}
+
+nav ul li {
+    list-style: none;
+    display: inline-block;
+    padding: 10px;
+}
+
+nav ul li:hover {
+    background-color: dodgerblue;
+    color: #fff;
+    transition: 0.8s;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+}
+
+#exitButton {
+    padding: 3px;
+}
+
+.parent {
+    /* height: 100vh; */
+    
+    display: flex;
+    justify-content: center;
+    background-position: center; 
+    background-repeat: no-repeat; 
+    background-size: cover; 
+    align-items: center;
+    width: 100%;
+
+    padding: 10px;
+    background-color: teal;
+}
+
+.child-1 {
+    width: 30%;
+    margin: 10px;
+    border-radius: 10px;
+    background-color: white;
+}
+
+.chat-room {
+    width: 100%;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background-color: #fff;
+    /* border: 1px solid dodgerblue; */
+}
+
+.profile-pic {
+    width: 15%;
+    border-radius: 50px;
+    background-color: #fff;
+}
+
+.profile-pic img {
+    width:100%;
+    height:100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.chat-room h3 {
+    color: #000;
+}
+
+.chat-room h3 {
+    background-color: gray;
+    padding: 10px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.chat-room h3 a {
+    text-decoration: none;
+    color: white;
+}
+
+.child-2 {
+    width: 50%;
+    margin: 10px;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: #ebe9e2;
+    height: 80vh; /* Adjust this value to make it taller *
+    /* height: 80vh; */
+}
+
+.chat-body-parent {
+    display: flex;
+    justify-content: center;
+    /* align-items: center;
+    margin-bottom: 20px; */
+}
+
+
+.chat-body, .message {
+    width: 100%;
+    background-color: rgb(5, 82, 82);
+    border-radius: 10px;
+    display: flex;      
+    padding: 10px;
+    flex-direction: column;
+}
+
+.message {
+    max-height: 600px;  
+    overflow-y: auto;    
+}
+
+.chat-body .message .receive, .send {
+    background-color: rgb(122, 167, 167);
+    max-width: 400px;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.send:hover {
+    padding: 15px;
+    transition: 0.8s;
+}
+
+.receive:hover {
+    padding: 15px;
+    transition: 0.8s;
+}
+
+.chat-body .message .send {
+    align-self: flex-end;
+}
+
+.chat-body .message .receive {
+    align-self: flex-start;
+}
+
+.timestamp {
+    font-size: 0.8em;
+    color: #777;
+    align-self: flex-end; /* Align timestamp to the right */
+}
+
+.message .timestamp {
+    font-size: 0.8em;
+    color: #777;
+    align-self: flex-end; /* Align timestamp to the right */
+}
+form {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+form textarea {
+    width: 70%;
+    height: 40px;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+form button {
+    width: 25%;
+    padding: 10px;
+    background-color: teal;
+    /* background-color: #FBEEC1; */
+    border-radius: 5px;
+    border-color: black;
+    color: #000;
+}
+
+@media only screen and (max-width: 600px) {
+.child-2 {
+    width: 100%;
+}
+}
+
+.sidebar {
+     /* Adjust as needed */
+    background-color: teal;
+    padding: 5px;
+    margin-bottom: 0px;
+    /* border-radius: 10px; */
+    /* margin-right: 20px; */
+}
+
+.sidebar-content {
+    color: white;
+}
+
+.sidebar-content h3 {
+    margin-bottom: 10px;
+}
+
+.sidebar-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.sidebar-content ul li {
+    margin-bottom: 5px;
+}
+</style>
+</html>
