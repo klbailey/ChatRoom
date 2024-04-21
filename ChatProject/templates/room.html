@@ -1,0 +1,35 @@
+<!-- ChatProject>templates>room.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ room.name }}</title>
+    <style>
+        /* Your CSS styles for room page */
+    </style>
+</head>
+<body>
+    <h1>{{ room.name }}</h1>
+    <div>
+        <!-- Messages display -->
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    <h2>Active Users:</h2>
+    <ul>
+        {% for user in active_users %}
+            <li>{{ user.username }}</li>
+        {% endfor %}
+    </ul>
+    
+    <form method="post" action="{% url 'message-view' room_name=room_name username=request.user.username %}">
+        {% csrf_token %}
+        <input type="text" name="message" required>
+        <button type="submit">Send</button>
+    </form>
+    
+</body>
+</html>

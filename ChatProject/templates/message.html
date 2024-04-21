@@ -1,3 +1,4 @@
+
 <!-- ChatProject>templates>message.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -9,6 +10,8 @@
     <title>Messages</title>
     <!-- load static -->
     {% load static %}
+    <script src="{% static 'js/online_status.js' %}"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
@@ -23,18 +26,36 @@
     </nav>
 
     <!-- Add sidebar? -->
-
     <div class="sidebar">
         <div class="sidebar-content">
             <h3>Active Users:</h3>
             <ul>
-                
-                {% for user in active_users %}
-                    <li>{{ user }}</li>
+                {% for active_user in active_users %}
+                    <li>
+                        {% if active_user %}
+                            {% if active_user != '' %}
+                                <!-- Assuming 'active_user' itself is the username -->
+                                {% if active_user == user %}
+                                    <!-- If the active user is the current user, show in green -->
+                                    <a style="color: black" id="{{ active_user }}_status" href="{% url 'room' room_name=room_name username=active_user %}">{{ active_user }}</a>
+                                {% else %}
+                                    <!-- If the active user is not the current user, show in grey -->
+                                    <a style="color: rgb(83, 82, 82)" id="{{ active_user }}_status" href="{% url 'room' room_name=room_name username=active_user %}">{{ active_user }}</a>
+                                {% endif %}
+                            {% else %}
+                                <!-- Handle case where username is empty -->
+                                Active User: (No username)
+                            {% endif %}
+                        {% endif %}
+                    </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
+    
+    
+    
+    
 
     <div class="parent">
         <div class="child-2">
@@ -109,6 +130,15 @@
         console.log("WebSocket connection closed!");
     };
 
+    // Response from server
+    socket.addEventListener("message", (event) => {
+        console.log("Message received:", event.data);
+    });
+
+    // Error event
+    socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
     // Define currentTime outside of the event listener
     let currentTime;
 

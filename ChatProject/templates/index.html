@@ -1,3 +1,4 @@
+
 <!-- ChatProject>templates>index.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -10,17 +11,17 @@
 <body>
     <div class="parent">
         <div class="child">
-            <h1>Enter Room</h1>
-            
+            <h1>Register / Login</h1><br>
+            <h5>Existing usernames will login, new usernames will be registered</h5><br>
             <form action="" method="POST">
                 {% csrf_token %}
                 <label for="username">Username</label><br>
                 <input type="text" id="username" name="username" placeholder="Username" required><br>
+                <label for="password">Password</label><br>
+                <input type="text" id="password" name="password" placeholder="Password" required><br>
                 <label for="room">Room name</label><br>
-                <input type="text" id="room" name="room" placeholder="Room name" required><br>
-                
+                <input type="text" id="room" name="room" placeholder="Room name"><br>               
                 <label for="existing-rooms">Existing Rooms</label><br>
-
                 <select id="existing-rooms" name="existing_rooms">
                     {% if rooms %}
                         <option value="" disabled selected>Select a room</option> <!-- Add a default option -->

@@ -1,10 +1,13 @@
+#ChatProject>ChatApp>views.py
 from django.shortcuts import render, redirect
 from .models import *
+from django.contrib.auth import authenticate, login
 from django.contrib.sessions.models import Session
 from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from .models import Connected
 
 def CreateRoom(request):
     if request.method == 'POST':
@@ -26,11 +29,6 @@ def CreateRoom(request):
     return render(request, 'index.html', {'rooms': rooms})
 
 
-from django.shortcuts import render
-from .models import Room, Message, Connected
-from django.http import HttpResponse
-from django.shortcuts import redirect
-from django.shortcuts import get_object_or_404
 
 def MessageView(request, room_name, username):
     # Get or create a Connected instance for the user in the room
@@ -40,6 +38,9 @@ def MessageView(request, room_name, username):
     connected_instance.is_active = True
     connected_instance.save()
 
+    # Update user's online status
+    UserProfileModel.objects.filter(user=request.user).update(online_status=True)
+    
     # Get room object by name
     get_room = Room.objects.get(room_name=room_name)
 
@@ -75,6 +76,34 @@ def MessageView(request, room_name, username):
     }
     return render(request, 'message.html', context)
 
+# Register / Login
+def register_or_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        room_name = request.POST.get('room_name', None)  # Get the room_name from the form
+
+        user = User.objects.filter(username=username).first()
+        if user is not None:
+            # Log the user in
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('message')
+            else:
+                error_message = "Invalid username or password"
+                return render(request, 'index.html', {'error_message': error_message})
+        else:
+            # Create a new user
+            new_user = User.objects.create_user(username=username, password=password)
+            # Create UserProfileModel instance for the new user
+            UserProfileModel.objects.create(user=new_user, name=username, room_name=room_name)
+            # Log the user in
+            user = authenticate(request, username=username, password=password)
+            login(request, user)
+            return redirect('index')
+
+    return render(request, 'message.html')
 
 
 
