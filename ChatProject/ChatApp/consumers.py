@@ -3,23 +3,16 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from ChatApp.models import *
+from django.contrib.auth.models import User
+from .models import UserProfileModel
 from django.utils import timezone
 
 class ChatConsumer(AsyncWebsocketConsumer):
-    # connect method
-    async def connect(self):
-        # Get room_name from URL or wherever it's stored
-        room_name = self.scope['url_route']['kwargs']['room_name']
-        # Assuming username is also available in self.scope
-        username = self.scope['user'].username
-        # Mark user as active
-        Connected.set_user_active(self.scope['user'], room_name, is_active=True)
-        # Accept connection
-        self.accept()
-
-        # self.room_name = f"room_{self.scope['url_route']['kwargs']['room_name']}"
-        # await self.channel_layer.group_add(self.room_name, self.channel_name)
-        # await self.accept()
+    # connect method    
+    async def connect(self):      
+        self.room_name = f"room_{self.scope['url_route']['kwargs']['room_name']}"
+        await self.channel_layer.group_add(self.room_name, self.channel_name)
+        await self.accept()
     
     # receive method
     async def receive(self, text_data):
@@ -59,6 +52,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 
 # Listen for events related to user connections, updates, disconnections & updates online_status
+# Listen for events related to user connections, updates, disconnections & updates online_status
 class OnlineStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_group_name = 'user'
@@ -67,7 +61,7 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         await self.accept()
-        
+        await self.update_active_users()  # CHANGE: Call update_active_users when a user connects
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
@@ -75,31 +69,39 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
         connection_type = data['type']
         print(connection_type)
         await self.change_online_status(username, connection_type)
-
-    async def send_onlineStatus(self, event):
-        data = json.loads(event.get('value'))
-        username = data['username']
-        online_status = data['status']
-        await self.send(text_data=json.dumps({
-            'username':username,
-            'online_status':online_status
-        }))
-
+        await self.update_active_users()  # CHANGE: Call update_active_users whenever user status changes
 
     async def disconnect(self, message):
-        # Get room_name from URL or wherever it's stored
-        room_name = self.scope['url_route']['kwargs']['room_name']
-        # Mark user as inactive
-        Connected.set_user_active(self.scope['user'], room_name, is_active=False)
-        # self.channel_layer.group_discard(
-        #     self.room_group_name,
-        #     self.channel_name
-        # )
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.update_active_users()  # CHANGE: Call update_active_users when a user disconnects
 
+    @database_sync_to_async
+    def get_active_users(self):
+        return list(UserProfileModel.objects.filter(online_status=True).values_list('user__username', flat=True))
+
+    async def update_active_users(self):
+        active_users = await self.get_active_users()
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'send_active_users',
+                'active_users': active_users
+            }
+        )
+
+    async def send_active_users(self, event):
+        await self.send(text_data=json.dumps({
+            'active_users': event['active_users']
+        }))
+        
     @database_sync_to_async
     def change_online_status(self, username, c_type):
         user = User.objects.get(username=username)
-        userprofile = UserProfileModel.objects.get(user=user)
+        userprofile, _ = UserProfileModel.objects.get_or_create(user=user)
+
         if c_type == 'open':
             userprofile.online_status = True
             userprofile.save()

@@ -39,7 +39,11 @@ def MessageView(request, room_name, username):
     connected_instance.save()
 
     # Update user's online status
-    UserProfileModel.objects.filter(user=request.user).update(online_status=True)
+    # UserProfileModel.objects.filter(user=request.user).update(online_status=True)
+    
+    # Set user as active in the room and update online status
+    Connected.set_user_active(request.user, room_name, is_active=True)
+
     
     # Get room object by name
     get_room = Room.objects.get(room_name=room_name)
@@ -107,17 +111,26 @@ def register_or_login(request):
 
 
 
-def user_profile_by_id(request, user_id):
-    # RETRIEVE THE USER BY ID
-    user = get_object_or_404(User, id=user_id)
-    
-    # NOW YOU HAVE THE USER OBJECT, YOU CAN ACCESS ITS PROPERTIES
-    username = user.username
-    # ADD ANY OTHER USER-RELATED OPERATIONS HERE
-    
-    return HttpResponse(f"Username: {username}")
+def user_profile_by_id(user_id):
+    try:
+        # Retrieve the user by ID or return a 404 error if not found
+        user = get_object_or_404(User, id=user_id)
+        
+        # Access user properties
+        username = user.username
+        
+        # Example: Get the room associated with the user (if any)
+        try:
+            room = Room.objects.get(user=user)
+            room_name = room.room_name
+        except Room.DoesNotExist:
+            room_name = "No room associated with this user"
+        
+        return HttpResponse(f"Username: {username}, Room: {room_name}")
+    except User.DoesNotExist:
+        return HttpResponse("User not found", status=404)
 
-def user_profile_by_username(request, username):
+def user_profile_by_username(username):
     # RETRIEVE THE USER BY USERNAME
     user = get_object_or_404(User, username=username)
     
