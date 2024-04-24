@@ -28,40 +28,22 @@
     <p>User: {{ user }}</p>
 
     <!-- Add sidebar? -->
+    <!-- Sidebar with active users -->
     <div class="sidebar">
         <div class="sidebar-content">
             <h3>Active Users:</h3>
-            <ul>
-                {% for active_user in active_users %}
-                    <p>Active User: {{ active_user }}</p>
-                {% endfor %}
+            <ul id="activeUsersList">
+                {% for active_user, is_online in online_status.items %}
+                
+                <!-- <li class="{% if is_online %}active{% else %}inactive{% endif %}">{{ active_user }}</li> -->
+                <li class="{% if active_user == user %}active{% else %}inactive{% endif %}">{{ active_user }}</li>
 
-                {% for active_user in active_users %}
-                    <li>
-                        {% if active_user %}
-                            {% if active_user != '' %}
-                                <!-- Assuming 'active_user' itself is the username -->
-                                {% if active_user == user %}
-                                    <!-- If the active user is the current user, show in green -->
-                                    <a style="color: black" id="{{ active_user }}_status" href="{% url 'room' room_name=room_name username=active_user %}">{{ active_user }}</a>
-                                {% else %}
-                                    <!-- If the active user is not the current user, show in grey -->
-                                    <a style="color: rgb(83, 82, 82)" id="{{ active_user }}_status" href="{% url 'room' room_name=room_name username=active_user %}">{{ active_user }}</a>
-                                {% endif %}
-                            {% else %}
-                                <!-- Handle case where username is empty -->
-                                Active User: (No username)
-                            {% endif %}
-                        {% endif %}
-                    </li>
+
                 {% endfor %}
             </ul>
         </div>
     </div>
     
-    
-    
-
     <div class="parent">
         <div class="child-2">
             <center><br><h2>Chat</h2></center><br>
@@ -88,19 +70,13 @@
                             {% endif %}
                         {% endfor %}
                             
-                                <!-- <div class="receive">
-                                    <p style="color: #000;"> {{i.message}}<strong>-{{i.sender}}</strong></p>
-                                </div>
-                            
-                                <div class="send">
-                                    <p style="color: #000;">{{i.message}}</p>
-                                </div> -->
-                            
                     <!-- end receive messages -->
                     </div>
 
                     <div class="form">
-                        <form action="" id="message-form" method="POST">
+                        <!-- <form action="" id="message-form" method="POST"> -->
+                        <form action="/{{ room_name }}/{{ user }}/" id="message-form" method="POST">
+
                             {% csrf_token %}
                             <textarea id="msg" cols="30" name="message" rows="10" placeholder="Enter your message" required></textarea>
                             <button class="submit" type="submit">Send</button>
@@ -216,7 +192,8 @@
 
     // Add event listener for the exit button
     document.getElementById('exitButton').addEventListener('click', function(event){
-    // Close WebSocket connection
+    console.log("Closing WebSocket connection...");
+        // Close WebSocket connection
     socket.close(); 
 
     // Redirect to the desired page
@@ -224,6 +201,7 @@
 });
 
 </script>
+
 <style>
 
 * {
@@ -449,5 +427,19 @@ form button {
 .sidebar-content ul li {
     margin-bottom: 5px;
 }
+
+.active,
+.active-user.active {
+    /* Styles for active users */
+    color: black;
+}
+
+.inactive,
+.active-user.inactive {
+    /* Styles for inactive users */
+    color: grey;
+}
+
+
 </style>
 </html>

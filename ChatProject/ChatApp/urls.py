@@ -2,7 +2,6 @@
 #ChatProject>ChatApp>urls.py
 from django.urls import path
 from . import views
-from .views import register_or_login
 
 urlpatterns = [
     path('', views.CreateRoom, name='create-room'),
@@ -13,6 +12,6 @@ urlpatterns = [
     # path('chat/<str:room_name>/<str:username>/', views.chat_view, name='chat'),
     # path('login/', register_or_login, name='login'),
     # path('register/', register_or_login, name='register'),
-    path('register_or_login/', register_or_login, name='register_or_login'),
+    # path('register_or_login/', views.register_or_login, name='register_or_login'),
 ]
     

@@ -58,6 +58,9 @@ class Connected(models.Model):
             connected_instance.last_activity = timezone.now()
             connected_instance.save()
 
+        # Update user's online status in the UserProfileModel
+        UserProfileModel.objects.filter(user=user).update(online_status=is_active)
+
     # @classmethod
     # def set_user_active(cls, user, room_name, is_active=True):
     #     connected_instance, created = cls.objects.get_or_create(user=user, room_name=room_name, defaults={'channel_name': 'default'})

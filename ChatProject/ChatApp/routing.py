@@ -1,6 +1,6 @@
 
 #ChatProject>ChatApp>routing.py
-from django.urls import path, re_path
+from django.urls import path
 from .consumers import ChatConsumer, OnlineStatusConsumer
 from . import consumers
 
@@ -12,3 +12,13 @@ websocket_urlpatterns = [
     path('ws/online/', OnlineStatusConsumer.as_asgi()),
 ]
 
+# New URL pattern for ChatConsumer with AuthMiddlewareStack
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+
+# Append the new URL pattern
+websocket_urlpatterns += [
+    path("chat/<room_name>/", AuthMiddlewareStack(URLRouter([
+        path("chat/<room_name>/", ChatConsumer),
+    ]))),
+]
