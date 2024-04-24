@@ -1,13 +1,18 @@
+
 #ChatProject>ChatApp>views.py
 from django.shortcuts import render, redirect
 from .models import *
 from django.contrib.auth import authenticate, login
 from django.contrib.sessions.models import Session
 from django.contrib.auth.models import User
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
-from .models import Connected
+from .models import Connected, UserProfileModel
+from django.contrib.auth.decorators import login_required
+from .models import UserProfileModel, Room
+from django.urls import reverse
+# from django.contrib.auth.forms import UserCreationForm
 
 def CreateRoom(request):
     if request.method == 'POST':
@@ -28,9 +33,10 @@ def CreateRoom(request):
     rooms = Room.objects.all().values_list('room_name', flat=True)
     return render(request, 'index.html', {'rooms': rooms})
 
-
-
+@login_required
 def MessageView(request, room_name, username):
+    print("User:", username)
+
     # Get or create a Connected instance for the user in the room
     connected_instance, created = Connected.objects.get_or_create(user=request.user, room_name=room_name, defaults={'channel_name': 'default'})
     
@@ -39,35 +45,25 @@ def MessageView(request, room_name, username):
     connected_instance.save()
 
     # Update user's online status
-    # UserProfileModel.objects.filter(user=request.user).update(online_status=True)
-    
-    # Set user as active in the room and update online status
-    Connected.set_user_active(request.user, room_name, is_active=True)
-
+    UserProfileModel.objects.filter(user=request.user).update(online_status=True)
     
     # Get room object by name
     get_room = Room.objects.get(room_name=room_name)
 
     # Get active users in the current room
-    active_users = Connected.objects.filter(room_name=room_name, is_active=True).values_list('user__username', flat=True)
+    active_users = list(Connected.objects.filter(room_name=room_name, is_active=True).exclude(user=request.user).values_list('user__username', flat=True))
     
-    # Convert queryset to list
-    active_users = list(active_users)
-
-    print("Active Users:", active_users)  # Add this line for debugging
-
     # Add the current user to the active users list if not already present
-    if username not in active_users:
-        active_users.append(username)
-        # Update the session data
-        request.session[f'room_{room_name}_{username}'] = True
+    if request.user.username not in active_users:
+        active_users.append(request.user.username)
+
+    # Debug output to check active_users
+    print("Active Users:", active_users)
 
     if request.method == 'POST':
         message = request.POST['message']
-
-        print(message)
-
-        new_message = Message(room=get_room, sender=username, message=message)
+        new_message = Message(room=get_room, sender=request.user.username, message=message)
+        
         new_message.save()
 
     get_messages = Message.objects.filter(room=get_room)
@@ -83,33 +79,81 @@ def MessageView(request, room_name, username):
 # Register / Login
 def register_or_login(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        room_name = request.POST.get('room_name', None)  # Get the room_name from the form
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        room_name = request.POST.get('room')
 
-        user = User.objects.filter(username=username).first()
+        if not username or not password or not room_name:
+            return HttpResponseBadRequest("Missing username, password, or room name")
+
+        user = authenticate(request, username=username, password=password)
         if user is not None:
-            # Log the user in
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('message')
-            else:
-                error_message = "Invalid username or password"
-                return render(request, 'index.html', {'error_message': error_message})
+            print("User authenticated:", user.username)
         else:
-            # Create a new user
-            new_user = User.objects.create_user(username=username, password=password)
-            # Create UserProfileModel instance for the new user
-            UserProfileModel.objects.create(user=new_user, name=username, room_name=room_name)
-            # Log the user in
-            user = authenticate(request, username=username, password=password)
-            login(request, user)
-            return redirect('index')
+            print("Creating new user...")
+            try:
+                # User doesn't exist, create a new user
+                new_user = User.objects.create_user(username=username, password=password)
+                print("New user created:", new_user.username)
+                user = authenticate(request, username=username, password=password)
+                if user is not None:
+                    print("User authenticated after creation:", user.username)
+                    login(request, user)
+                else:
+                    print("Failed to authenticate newly created user")
+                    return HttpResponseBadRequest("Failed to authenticate newly created user")
+            except Exception as e:
+                print("Error creating user:", e)
+                return HttpResponseBadRequest("Error creating user")
 
-    return render(request, 'message.html')
+        # Set the username in the session
+        request.session['username'] = username
 
+        # Redirect the user to the messages page for the selected room
+        return redirect('room', room_name=room_name, username=username)
+    else:
+        # If it's a GET request, just display the registration/login page
+        rooms = Room.objects.all().values_list('room_name', flat=True)
+        return render(request, 'index.html', {'rooms': rooms})
+    
+# def register_or_login(request):
+#     if request.method == 'POST':
+#         username = request.POST['username']
+#         password = request.POST['password']
+#         room_name = request.POST.get('room_name', None)
 
+#         print(f"Received username: {username}, password: {password}, room_name: {room_name}")
+
+#         user, created = User.objects.get_or_create(username=username)
+
+#         if created:
+#             user.set_password(password)
+#             user.save()
+
+#             print("New user created.")
+
+#             profile, _ = UserProfileModel.objects.get_or_create(user=user, name=username)
+#             profile.room_name = room_name
+#             profile.save()
+
+#             print("UserProfileModel instance created and saved.")
+
+#             connected_instance, _ = Connected.objects.get_or_create(user=user, room_name=room_name)
+#             connected_instance.save()
+
+#             print("Connected instance created and saved.")
+
+#         user = authenticate(request, username=username, password=password)
+#         if user is not None:
+#             login(request, user)
+#             Connected.set_user_active(user, room_name)
+#             print("User authenticated and set active.")
+#             return redirect('message')
+#         else:
+#             error_message = "Failed to log in the user"
+#             return render(request, 'index.html', {'error_message': error_message})
+
+#     return render(request, 'message.html')
 
 def user_profile_by_id(user_id):
     try:

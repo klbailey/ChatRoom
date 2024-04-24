@@ -48,12 +48,29 @@ class Connected(models.Model):
 
     @classmethod
     def set_user_active(cls, user, room_name, is_active=True):
-        connected_instance, created = cls.objects.get_or_create(user=user, room_name=room_name, defaults={'channel_name': 'default'})
-        connected_instance.is_active = is_active
-        connected_instance.last_activity = timezone.now()  # Update last activity time
-        connected_instance.save()
-        # Update user's online status in UserProfileModel
-        UserProfileModel.objects.filter(user=user).update(online_status=is_active)
+        connected_instance, created = cls.objects.get_or_create(
+            user=user, 
+            room_name=room_name,
+            defaults={'channel_name': 'default', 'is_active': is_active}
+        )
+        if not created:
+            connected_instance.is_active = is_active
+            connected_instance.last_activity = timezone.now()
+            connected_instance.save()
+
+    # @classmethod
+    # def set_user_active(cls, user, room_name, is_active=True):
+    #     connected_instance, created = cls.objects.get_or_create(user=user, room_name=room_name, defaults={'channel_name': 'default'})
+    #     connected_instance.is_active = is_active
+    #     connected_instance.last_activity = timezone.now()  # Update last activity time
+    #     connected_instance.save()
+        
+    #     UserProfileModel.objects.filter(user=user).update(online_status=is_active)
+
+        
+    #     user_profile, created = UserProfileModel.objects.get_or_create(user=user)
+    #     user_profile.online_status = is_active
+    #     user_profile.save()
 
     @classmethod
     def get_online_users(cls, room_name):

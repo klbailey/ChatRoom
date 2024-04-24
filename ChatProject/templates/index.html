@@ -13,7 +13,8 @@
         <div class="child">
             <h1>Register / Login</h1><br>
             <h5>Existing usernames will login, new usernames will be registered</h5><br>
-            <form action="" method="POST">
+            <!-- Modify the form action to submit the username, password, and selected room -->
+            <form action="{% url 'register_or_login' %}" method="POST">
                 {% csrf_token %}
                 <label for="username">Username</label><br>
                 <input type="text" id="username" name="username" placeholder="Username" required><br>

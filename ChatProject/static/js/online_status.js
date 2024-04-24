@@ -1,6 +1,8 @@
 
 // ChatProject>static>js>online_status.js
-const loggedin_user = JSON.parse(document.getElementById('json-message-username').textContent);
+
+const user = "{{ user }}"; // Assuming 'user' is available in your template
+
 const online_status = new WebSocket(
     'ws://'
     + window.location.host
@@ -11,15 +13,15 @@ const online_status = new WebSocket(
 online_status.onopen = function(e){
     console.log("CONNECTED TO ONLINE CONSUMER");
     online_status.send(JSON.stringify({
-        'username':loggedin_user,
-        'type':'open'
+        'username': user, // Using the 'user' variable directly
+        'type': 'open'
     }))
 }
 
 window.addEventListener("beforeunload", function(e){
     online_status.send(JSON.stringify({
-        'username':loggedin_user,
-        'type':'offline'
+        'username': user, // Using the 'user' variable directly
+        'type': 'offline'
     }))
 })
 
@@ -29,7 +31,7 @@ online_status.onclose = function(e){
 
 online_status.onmessage = function(e){
     var data = JSON.parse(e.data)
-    if(data.username != loggedin_user){
+    if(data.username != user){ // Using the 'user' variable directly
         var user_to_change = document.getElementById(`${data.username}_status`)
         var small_status_to_change = document.getElementById(`${data.username}_small`)
         if(data.online_status == true){
