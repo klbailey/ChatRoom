@@ -88,12 +88,24 @@
     </div>
 </body>
 <script>
+    // const username = "{{ user }}";
+    const user_id = "{{ user_id }}";
+    // Extract username from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('username');  // Assuming the username is passed in the URL parameter 'username'
+
+    // Define currentTime outside of the event listener
+    let currentTime;
+
+    // Function to scroll to the bottom of the chat container
     function scrollToBottom() {
         var chatContainer = document.getElementById("chatContainer");
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-    // Call the function when the page loads or when a new message is added
+
+    // Call the scrollToBottom function when the page loads
     window.onload = scrollToBottom;
+
     // if url is secure (https) will use ws 
     const websocketProtocol = window.location.protocol === "https:" ? "wss" : "ws";
     // create endpoint url map to routing.py
@@ -104,6 +116,7 @@
     // Successful connection event
     socket.onopen = (event) => {
         console.log("WebSocket connection opened!");
+        socket.send(JSON.stringify({ username: username, type: 'open' }));
     };
 
     // Socket disconnect event
@@ -120,24 +133,24 @@
     socket.onerror = (error) => {
         console.error("WebSocket error:", error);
     };
-    // Define currentTime outside of the event listener
-    let currentTime;
 
     // Form submit listener so page doesn't refresh page on send
     document.getElementById('message-form').addEventListener('submit', function(event){
         event.preventDefault();
         const message = document.getElementById('msg').value;
         // Get the current timestamp
-        const currentTime = new Date().toISOString();
+        currentTime = new Date().toISOString();
         // send user input data in json format 
         socket.send(
             JSON.stringify({
                 'message': message,
                 'timestamp': currentTime,
-                'room_name': '{{room_name}}',
-                'sender': '{{user}}',
+                'room_name': '{{ room_name }}',
+                'sender': '{{ user }}',
             })
         );
+        // Clear the input field after sending the message
+        document.getElementById('msg').value = '';
     });
 
     // Response from consumer on server
@@ -158,7 +171,6 @@
 
         // Format the timestamp using toLocaleString()
         var formattedTimestamp = date.toLocaleString('en-US', {
-        // var formattedTimestamp = new Date(timestamp).toLocaleString('en-US', {
             month: 'long', // Display full month name
             day: 'numeric', // Display day of the month
             year: 'numeric', // Display full year
@@ -168,20 +180,20 @@
         });
 
         // Empty message input field after message has been sent
-        if (sender == '{{user}}'){
+        if (sender == '{{ user }}'){
             document.getElementById('msg').value = '';
         }
         
         // Append message to chatbox
         var messageDiv = document.querySelector('.message');
-        if (sender != '{{user}}') { // Assuming you have a variable `currentUser` to hold the current user's name
+        if (sender != '{{ user }}') { // Assuming you have a variable `currentUser` to hold the current user's name
             messageDiv.innerHTML += '<div class="receive"><p style="color: #000;">' + message + '<strong>-' + sender + '</strong></p><span class="timestamp">' + formattedTimestamp + '</span></div>';
         } else {
             // Update the timestamp for the sent message when it's received from the server
             var sentMessage = '<div class="send"><p style="color: #000;">' + message + '</p><span class="timestamp">' + formattedTimestamp + '</span></div>';
             messageDiv.innerHTML += sentMessage;
             // Check if the message is sent, then update the timestamp
-            if (messageData['sender'] == '{{user}}') {
+            if (messageData['sender'] == '{{ user }}') {
                 const index = messageDiv.children.length - 1; // Index of the last child element
                 // Replace the "Sending..." placeholder with the actual timestamp
                 messageDiv.children[index].querySelector('.timestamp').innerText = formattedTimestamp;
@@ -190,7 +202,7 @@
         scrollToBottom();
     });
 
-    // Add event listener for the exit button
+    // Add event listener for the exit button    
     document.getElementById('exitButton').addEventListener('click', function(event){
     console.log("Closing WebSocket connection...");
         // Close WebSocket connection
@@ -201,6 +213,7 @@
 });
 
 </script>
+
 
 <style>
 

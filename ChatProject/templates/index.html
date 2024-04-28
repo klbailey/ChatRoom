@@ -13,16 +13,12 @@
         <div class="child">
             <h1>Register / Login</h1><br>
             <h5>Existing usernames will login, new usernames will be registered</h5><br>
-            <!-- Modify the form action to submit the username, password, and selected room -->
-            <form action="/{{ room_name }}/{{ username }}/" method="POST">
-
+            <form id="room-form" method="POST">
                 {% csrf_token %}
                 <label for="username">Username</label><br>
                 <input type="text" id="username" name="username" placeholder="Username" required><br>
                 <label for="password">Password</label><br>
                 <input type="text" id="password" name="password" placeholder="Password" required><br>
-                <label for="room">Room name</label><br>
-                <input type="text" id="room" name="room" placeholder="Room name"><br>               
                 <label for="existing-rooms">Existing Rooms</label><br>
                 <select id="existing-rooms" name="existing_rooms">
                     {% if rooms %}
@@ -36,19 +32,28 @@
                 </select>         
                 <center><button type="submit">Submit</button></center><br>
             </form> 
-            
         </div>
     </div>
 </body>
 <script>
-    document.getElementById('existing-rooms').addEventListener('change', function() {
-        var selectedRoom = this.value; // Get the selected room name
-        var username = document.getElementById('username').value; // Get the username
-        var url = "/"+selectedRoom+"/"+username+"/"; // Construct the URL
-        window.location.href = url; // Redirect the user to the selected room's URL
+    document.getElementById('room-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+        var username = document.getElementById('username').value; // Get the entered username
+        var password = document.getElementById('password').value; // Get the entered password
+        var Rooms = document.getElementById('existing-rooms');
+        var selectedRoom = Rooms.options[Rooms.selectedIndex].value;
+
+
+        if (selectedRoom) {
+            // If a room is selected, construct the URL with the selected room
+            var url = "/" + selectedRoom + "/" + username + "/";
+            window.location.href = url; // Redirect the user to the selected room's URL
+        } else {
+            // Handle case where no room is selected
+            alert("Please select a room.");
+        }
     });
 </script>
-
 <style>
 
 * {
