@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+import json
 
 class Room(models.Model):
     room_name = models.CharField(max_length=255)
@@ -42,7 +43,7 @@ class Connected(models.Model):
     channel_name = models.CharField(max_length=100, null=False)
     connect_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
-    last_activity = models.DateTimeField(auto_now=True) 
+    last_activity = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.username)   
@@ -84,7 +85,21 @@ class Connected(models.Model):
             # Handle the case where the user is not authenticated
             print("User is not authenticated.")
 
+    async def send_entry_message(self, event):
+        entry_message = event['message']
+        # Send the entry message to all users in the room
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': 'broadcast_entry_message',
+                'message': entry_message,
+            }
+        )
 
+    # Broadcast the entry message to all users in the room
+    async def broadcast_entry_message(self, event):
+        entry_message = event['message']
+        await self.send(text_data=json.dumps({'entry_message': entry_message}))
     # @classmethod
     # def set_user_active(cls, user, room_name, is_active=True):
     #     connected_instance, created = cls.objects.get_or_create(user=user, room_name=room_name, defaults={'channel_name': 'default'})
@@ -113,7 +128,7 @@ class Connected(models.Model):
 
                 UserProfileModel.objects.filter(user=user).update(online_status=False)
             
-            print(f"User {user.username} disconnected from room {room_name}")
+            print(f"User {user} disconnected from room {room_name}")
         except cls.DoesNotExist:
             # Handle case where the connected instance does not exist
             print("Connected instance does not exist.")

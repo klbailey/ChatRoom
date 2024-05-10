@@ -16,31 +16,44 @@
 </head>
 <body>
     
-    <h1>Welcome, {{ user }}</h1>
+    <!-- <h1>Welcome, {{ user }}</h1> -->
     <!-- Navigation bar -->
     <nav>
         <ul>
             <li style="color:white;">You are in the room {{ user }}</li>
             <!-- Add an exit button -->
-            <li><button id="exitButton">Exit</button></li>
+            <a href="/disconnect/{{ room_name }}/{{ user }}">
+                <button>Exit</button>
+            </a>
+
         </ul>
     </nav>
-    <p>User: {{ user }}</p>
+    <!-- <p>User: {{ user }}</p> -->
+    <!-- I WANT TO ADD MESSAGE/NOTIFICATION HERE -->
+    <!-- Display entry message -->
+    <!-- {% if entry_message %}
+        <p>{{ entry_message }}</p>
+    {% endif %} -->
 
     <!-- Add sidebar? -->
     <!-- Sidebar with active users -->
     <div class="sidebar">
         <div class="sidebar-content">
             <h3>Active Users:</h3>
-            <ul id="activeUsersList">
+            <ul>
+                {% for user in active_users %}
+                    <li>{{ user }}</li>
+                {% endfor %}
+            </ul>
+            <!-- <ul id="activeUsersList">
                 {% for active_user, is_online in online_status.items %}
-                
+                 -->
                 <!-- <li class="{% if is_online %}active{% else %}inactive{% endif %}">{{ active_user }}</li> -->
-                <li class="{% if active_user == user %}active{% else %}inactive{% endif %}">{{ active_user }}</li>
+                <!-- <li class="{% if active_user == user %}active{% else %}inactive{% endif %}">{{ active_user }}</li>
 
 
                 {% endfor %}
-            </ul>
+            </ul> -->
         </div>
     </div>
     

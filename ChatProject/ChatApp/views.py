@@ -3,6 +3,7 @@
 
 from django.shortcuts import render, redirect
 from .models import *
+from django.http import HttpResponse
 from .models import Connected, UserProfileModel
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -95,6 +96,8 @@ def MessageView(request, room_name, username):
     # Get or create the UserProfileModel instance for the user
     user_profile, _ = UserProfileModel.objects.get_or_create(user=user)
 
+    
+
     # If the user profile name is not set, set it to the username
     if not user_profile.name:
         user_profile.name = user.username
@@ -142,7 +145,8 @@ def MessageView(request, room_name, username):
         "user": user_profile.name,
         "room_name": room_name,
         "active_users": active_users,
-        "online_status": online_status
+        "online_status": online_status,
+        "entry_message": f'{username} entered the chatroom.'
     }
     return render(request, 'message.html', context)
 
@@ -174,3 +178,61 @@ def user_profile_by_username(username):
     # ADD ANY OTHER USER-RELATED OPERATIONS HERE
     
     return HttpResponse(f"User ID: {user_id}")
+
+def disconnect(request, room_name, user):
+    user_id=(Connected.get_online_users(room_name).first().user.id)
+    Connected.disconnect_user(user_id, room_name)  
+    print("HEY", user, room_name)
+    return render(request, 'index.html')
+
+
+
+
+def send_message(request, room_name, username):
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        if message:
+            room = Room.objects.get(room_name=room_name)
+            sender_username = request.user.username  # Assuming the sender is the currently logged-in user
+            Message.objects.create(room=room, sender=sender_username, message=message)
+    return redirect('room', room_name=room_name, username=username)
+# import logging
+
+# Get an instance of a logger
+# logger = logging.getLogger(__name__)
+
+@login_required
+def enter_room(request, room_name):
+    user = request.user
+    user_id = user_id
+    room = Room.objects.get(room_name=room_name)
+    
+    # Check if the user has previously entered the room
+    if not Message.objects.filter(room=room, sender=user.id, message__contains="entered the chatroom").exists():
+        # If not, create a message indicating the user has entered the chatroom
+        entry_message = f'{user.username} entered the chatroom.'
+        Message.objects.create(room=room, sender=user.id, message=entry_message)
+    
+    # Get all messages for the room
+    messages = Message.objects.filter(room=room)
+    
+    return render(request, 'message.html', {'messages': messages})
+
+def notify_active_users(room_name, new_user):
+    active_users = Connected.objects.filter(room_name=room_name, is_active=True).exclude(user=new_user)
+    for active_user in active_users:
+        # Send a notification to each active user
+        active_user.send_entry_message({'message': f'{new_user.username} has entered the chatroom.'})
+
+
+def active_users(request):
+    # Retrieve active users from ChatNotification model
+    active_notifications = ChatNotification.objects.filter(is_seen=False)
+
+    # Extract unique users from active notifications
+    # active_users = active_notifications.values_list('user__username', flat=True).distinct()
+
+    # return render(request, 'active_users.html', {'active_users': active_users})
+    # Retrieve active users from Connected model
+    active_users = Connected.objects.filter(is_active=True)
+    return render(request, 'active_users.html', {'active_users': active_users})

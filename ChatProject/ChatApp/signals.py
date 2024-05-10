@@ -1,10 +1,13 @@
-
 #ChatProject>ChatApp>signals.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import UserProfileModel, ChatNotification, Connected
+from .models import UserProfileModel, ChatNotification, Connected, Message
 import json
-
+# Import the Signal class
+from django.dispatch import Signal
+from django.utils import timezone
+# Define the signal
+send_entry_message = Signal()
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -70,3 +73,60 @@ def update_online_status(sender, instance, created, **kwargs):
                 'value': json.dumps(data)
             }
         )
+
+@receiver(post_save, sender=Message)
+def send_entry_message(sender, instance, created, **kwargs):
+    if created:
+        if instance.sender == 'System' and 'has entered the chatroom' in instance.message:
+            print("Entry message created:", instance.message)  # Debug print statement
+            # Construct the entry message data
+            entry_message_data = {
+                'type': 'entry_message',
+                'message': instance.message,
+                'timestamp': instance.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+            # Send the entry message data to all clients in the relevant room
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                instance.room.room_name, {
+                    'type': 'send_entry_message',
+                    'data': json.dumps(entry_message_data)
+                }
+            )
+
+# Define the signal
+send_entry_message = Signal()
+
+# Signal handler to send entry message
+@receiver(send_entry_message)
+def handle_entry_message(sender, instance, user, created, **kwargs):
+    if created:
+        # Construct the entry message data
+        entry_message_data = {
+            'type': 'entry_message',
+            'message': f"{user.username} has entered the chatroom",
+            'timestamp': instance.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # Send the entry message data to all clients in the relevant room
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            instance.room_name, {
+                'type': 'send_entry_message',
+                'data': json.dumps(entry_message_data)
+            }
+        )
+
+@receiver(post_save, sender=UserProfileModel)
+def log_user_login(sender, instance, created, **kwargs):
+    if created:
+        username = instance.user.username 
+        room_name = instance.room_name
+        # user = instance.user.username
+        entry_message = f"{username} has joined the room"  # Create entry message
+        # Send entry message to all users in the room
+        Connected.send_entry_message(room_name, entry_message)
+
+
+    
