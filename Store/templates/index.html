@@ -1,0 +1,21 @@
+<!-- Store/templates/index.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Home - My Django Website{% endblock %}
+
+{% block content %}
+<section>
+    <!-- Your homepage content here -->
+</section>
+{% endblock %}
+
+{% block image %}
+<div class="image-container">
+    <img src="{% static 'images/cycle_cover.jpg' %}" alt="Cyclist">
+    <div class="image-credit" style="font-size: 10px;">
+        Image by <a href="https://pixabay.com/photos/motion-blur-cycling-bike-race-1281675/" target="_blank" rel="noopener noreferrer">Free-Photos</a> from <a href="https://pixabay.com/" target="_blank" rel="noopener noreferrer">Pixabay</a>
+    </div>
+</div>
+{% endblock %}
+
+

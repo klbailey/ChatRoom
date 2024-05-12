@@ -1,0 +1,64 @@
+<!-- Store/templates/base.html -->
+<!-- Store/templates/base.html -->
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Django Website{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Pedal Power</h1>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'road_bikes' %}">Road Bikes</a></li>
+                    <li><a href="{% url 'mountain_bikes' %}">Mountain Bikes</a></li>
+                    <li><a href="{% url 'e_bikes' %}">E-Bikes</a></li>
+                </ul>
+            </nav>
+            <div class="content">
+                {% block content %}
+                {% endblock %}
+            </div>
+            {% block image %}
+            <div class="image-container">
+                <img src="{% static 'images/cycle_cover.jpg' %}" alt="Cyclist">
+                <div class="image-credit" style="font-size: 10px;">
+                    Image by <a href="https://pixabay.com/photos/motion-blur-cycling-bike-race-1281675/" target="_blank" rel="noopener noreferrer">Free-Photos</a> from <a href="https://pixabay.com/" target="_blank" rel="noopener noreferrer">Pixabay</a>
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+    </header>
+
+    
+
+    <!-- Include the chatbox HTML code -->
+    <div id="chat-container">
+        <!-- Inside the chat-container div -->
+        <button id="chat-toggle-btn">
+            <i class="fas fa-comment-dots"></i>
+            Chat
+        </button>
+
+        <div id="chat-log"></div>
+        <input type="text" id="user-input" placeholder="Type your message here...">
+        <button id="send-btn">Send</button>
+    </div>
+    
+    <footer>
+        <p>&copy; 2024 Pedal Power. All rights reserved.</p>
+    </footer>
+    
+    <!-- Add your global JavaScript files here -->
+    <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!-- Store>tetmplates>chatbox.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chatbot{% endblock %}
+
+{% block content %}
+<main>
+    <div id="chat-container">
+        <div id="chat-log"></div>
+        <input type="text" id="user-input" placeholder="Type your message here...">
+        <button id="send-btn">Send</button>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2024 Chatbot. All rights reserved.</p>
+</footer>
+{% endblock %}

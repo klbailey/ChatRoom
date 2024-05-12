@@ -1,0 +1,18 @@
+<!-- mountain_bikes.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mountain Bikes - My Django Website{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Mountain Bikes</h2>
+    <div class="product-list">
+        {% for product in mountain_bikes %}
+        <!-- Render mountain bike details -->
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+

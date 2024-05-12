@@ -1,0 +1,25 @@
+<!-- Store>templates>product_list.html -->
+<!-- Store/templates/product_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Road Bikes - My Django Website{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Road Bikes</h2>
+    <div class="product-list">
+        {% for product in road_bikes %}
+        <div class="product">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            <h4>{{ product.name }}</h4>
+            <p>{{ product.description }}</p>
+            <p>Price: ${{ product.price }}</p>
+            <a href="{% url 'product_detail' product.pk %}" class="button">View Details</a>
+        </div>
+        {% empty %}
+        <p>No road bikes available at the moment.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

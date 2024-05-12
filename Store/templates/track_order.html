@@ -1,0 +1,20 @@
+<!-- Store>templates>track_order.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+<form method="post">
+    {% csrf_token %}
+    <label for="tracking_number">Enter your tracking number:</label>
+    <input type="text" name="tracking_number" id="tracking_number">
+    <button type="submit">Track Order</button>
+</form>
+
+{% if order %}
+    <h2>Order Details</h2>
+    <p>Tracking Number: {{ order.tracking_number }}</p>
+    <p>Status: {{ order.delivery_status }}</p>
+{% endif %}
+
+{% if error_message %}
+    <p>{{ error_message }}</p>
+{% endif %}

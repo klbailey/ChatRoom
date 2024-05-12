@@ -1,0 +1,18 @@
+<!-- Store/templates/e_bikes.html -->
+<!-- e_bikes.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}E-Bikes - My Django Website{% endblock %}
+
+{% block content %}
+<section>
+    <h2>E-Bikes</h2>
+    <div class="product-list">
+        {% for product in e_bikes %}
+        <!-- Render E-bike details -->
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

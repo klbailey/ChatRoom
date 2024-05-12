@@ -1,0 +1,87 @@
+
+<!-- Store/templates/road_bikes.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Road Bikes{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Road Bikes</h2>
+    <div class="product-list">
+        <!-- First Bike -->
+        <div class="product">
+            <p>{{ product.id }}</p>
+            <img src="{% static 'images/roadbike1.jpg' %}" alt="RoadBike 1">
+            <div style="font-size: 7px; color: black">Photo by <a href="https://unsplash.com/@robertbye?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Robert Bye</a> on <a href="https://unsplash.com/photos/gray-fixie-bike-leaning-on-black-wall-tG36rvCeqng?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash">Unsplash</a>
+            </div><hr>
+            <h3>Ultimate CF</h3>
+            <p>Climbing. Descending. Cruising on the flats. This is a superb all-round road race bike, combining a lightweight frameset with the Ultimate’s unmatched handling.</p>
+            <p>Price: $6,699</p>
+            <!-- <button>Buy Now</button></a>     -->
+            <!-- Add to Cart button -->
+            {% if product %}
+                <form id="add_to_cart_form" action="{% url 'add_to_cart' product.id %}" method="post">
+                    {% csrf_token %}
+                    <button id="buy-now_button" type="submit">Buy Now</button>
+                </form>
+            {% else %}
+                <p>No road bikes available at the moment. Check back later!</p>
+            {% endif %}
+                
+        </div>
+        
+        
+        <!-- Second Bike -->
+        <div class="product">
+            <!-- <img src="{% static 'images/placeholder2.jpg' %}" alt="Bike 2"> -->
+            <div class="image-credit">Credit for Bike 2</div>
+            <h3>Title for Bike 2</h3>
+            <p>Description for Bike 2</p>
+            <p>Price: $XXX</p>
+            <button>Buy Now</button>
+            
+        </div>
+        
+        <!-- Third Bike -->
+        <div class="product">
+            <!-- <img src="{% static 'images/placeholder3.jpg' %}" alt="Bike 3"> -->
+            <div class="image-credit">Credit for Bike 3</div>
+            <h3>Title for Bike 3</h3>
+            <p>Description for Bike 3</p>
+            <p>Price: $XXX</p>
+            <button>Buy Now</button>
+        </div>
+    </div>
+    
+</section>
+<script>
+    document.getElementById("add_to_cart_form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        fetch(this.action, {
+            method: "POST",
+            body: new FormData(this),
+            headers: {
+                "X-CSRFToken": document.querySelector("input[name='csrfmiddlewaretoken']").value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Handle successful response (e.g., show a success message)
+                console.log("Product added to cart successfully!");
+            } else {
+                // Handle error response (e.g., show an error message)
+                console.error("Error adding product to cart.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+        });
+    });
+</script>
+
+{% endblock %}
+
+{% block image %}
+{% endblock %}
